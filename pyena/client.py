@@ -270,4 +270,4 @@ def cli():
             if run_stat > 1 and run_accession:
                 success = 1
 
-    print(success, args.my_data_is_ready, args.sample_name, args.run_name, args.run_file_path, args.study_accession, sample_accession, exp_accession, run_accession)
+    print(success, 1 if args.my_data_is_ready else 0, args.sample_name, args.run_name, args.run_file_path, args.study_accession, sample_accession, exp_accession, run_accession)
