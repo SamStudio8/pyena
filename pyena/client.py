@@ -149,6 +149,9 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
         #design_stanza = "<DESIGN_DESCRIPTION>FLO-MIN106 R9.4.1C FlipFlop</DESIGN_DESCRIPTION>"
     elif instrument == "prom":
         platform_stanza ="<OXFORD_NANOPORE><INSTRUMENT_MODEL>PromethION</INSTRUMENT_MODEL></OXFORD_NANOPORE>"
+    else:
+        sys.stderr.write("[FAIL] Unable to construct platform stanza for experiment %s with instrument %s\n" % (exp_alias, instrument))
+        return -1, None
 
     pair_size = 0
     layout_stanza = []
