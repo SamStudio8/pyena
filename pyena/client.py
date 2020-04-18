@@ -28,7 +28,7 @@ def _add_today(center_name):
     </SUBMISSION>
     ''' % datetime.today().strftime('%Y-%m-%d')
 
-def _release_target(target, center_name):
+def _release_target(target, center_name, real=False):
     release_xml = '''
     <SUBMISSION center_name="''' + center_name + '''">
     <ACTIONS>
@@ -38,10 +38,16 @@ def _release_target(target, center_name):
     </ACTIONS>
     </SUBMISSION>
     ''' % target
-    return requests.post("https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
-            files={
-                'SUBMISSION': release_xml,
-            }, auth=HTTPBasicAuth(WEBIN_USER, WEBIN_PASS))
+    if real:
+        return requests.post("https://www.ebi.ac.uk/ena/submit/drop-box/submit/",
+                files={
+                    'SUBMISSION': release_xml,
+                }, auth=HTTPBasicAuth(WEBIN_USER, WEBIN_PASS))
+    else:
+        return requests.post("https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
+                files={
+                    'SUBMISSION': release_xml,
+                }, auth=HTTPBasicAuth(WEBIN_USER, WEBIN_PASS))
 
 def status_code(response_text):
     response = 0
@@ -101,25 +107,31 @@ def handle_response(status_code, content, accession=False):
     return response_code, response_accession
 
 
-def submit_today(submit_type, payload, center_name, release_asap=False):
+def submit_today(submit_type, payload, center_name, release_asap=False, real=False):
     files = {}
     files[submit_type] = payload
     files["SUBMISSION"] = _add_today(center_name)
-    r = requests.post("https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
-            files=files,
-            auth=HTTPBasicAuth(WEBIN_USER, WEBIN_PASS))
+
+    if real:
+        r = requests.post("https://www.ebi.ac.uk/ena/submit/drop-box/submit/",
+                files=files,
+                auth=HTTPBasicAuth(WEBIN_USER, WEBIN_PASS))
+    else:
+        r = requests.post("https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
+                files=files,
+                auth=HTTPBasicAuth(WEBIN_USER, WEBIN_PASS))
     #print(payload)
     #print(_add_today())
     status, accession = handle_response(r.status_code, r.text, accession=submit_type)
     if release_asap and status == 0:
-        r = _release_target(accession, center_name)
+        r = _release_target(accession, center_name, real=real)
         status, _ = handle_response(r.status_code, r.text)
         if status == 0:
             sys.stderr.write("[INFO] %s released successfully: %s\n" % (submit_type, accession))
 
     return status, accession
 
-def register_sample(sample_alias, taxon_id, center_name):
+def register_sample(sample_alias, taxon_id, center_name, real=False):
     s_xml = '''
     <SAMPLE_SET>
     <SAMPLE alias="''' + sample_alias + '''" center_name="''' + center_name + '''">
@@ -131,9 +143,9 @@ def register_sample(sample_alias, taxon_id, center_name):
     </SAMPLE_SET>
     '''
 
-    return submit_today("SAMPLE", s_xml, center_name, release_asap=True)
+    return submit_today("SAMPLE", s_xml, center_name, release_asap=True, real=real)
 
-def register_experiment(exp_alias, study_accession, sample_accession, instrument, library_d, center_name):
+def register_experiment(exp_alias, study_accession, sample_accession, instrument, library_d, center_name, real=False):
     platform_stanza = ""
 
     instrument = instrument.lower()
@@ -193,9 +205,9 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
     '''
 
     # Register experiment to add run to
-    return submit_today("EXPERIMENT", e_xml, center_name, release_asap=True)
+    return submit_today("EXPERIMENT", e_xml, center_name, release_asap=True, real=real)
 
-def register_run(run_alias, fn, exp_accession, center_name, fn_type="bam"):
+def register_run(run_alias, fn, exp_accession, center_name, fn_type="bam", real=False):
     try:
         ftp = FTP('webin.ebi.ac.uk', user=WEBIN_USER, passwd=WEBIN_PASS, timeout=30)
         ftp.storbinary('STOR %s' % os.path.basename(fn), open(fn, 'rb'))
@@ -218,10 +230,12 @@ def register_run(run_alias, fn, exp_accession, center_name, fn_type="bam"):
         </RUN>
     </RUN_SET>
     '''
-    return submit_today("RUN", r_xml, center_name, release_asap=True)
+    return submit_today("RUN", r_xml, center_name, release_asap=True, real=real)
 
 def cli():
     parser = argparse.ArgumentParser()
+
+    parser.add_argument("--my-data-is-ready", action="store_true")
 
     parser.add_argument("--study-accession", required=True)
 
@@ -244,16 +258,16 @@ def cli():
     sample_accession = exp_accession = run_accession = None
     success = 0
 
-    sample_stat, sample_accession = register_sample(args.sample_name, args.sample_taxon, args.sample_center_name)
+    sample_stat, sample_accession = register_sample(args.sample_name, args.sample_taxon, args.sample_center_name, real=args.my_data_is_ready)
     if sample_stat > 0:
         exp_stat, exp_accession = register_experiment(args.run_name, args.study_accession, sample_accession, args.run_instrument.replace("_", " "), library_d={
             "source": args.run_lib_source.replace("_", " "),
             "selection": args.run_lib_selection.replace("_", " "),
             "strategy": args.run_lib_strategy.replace("_", " "),
-        }, center_name=args.run_center_name)
+        }, center_name=args.run_center_name, real=args.my_data_is_ready)
         if exp_stat > 0:
-            run_stat, run_accession = register_run("%s/%s" % (args.sample_name, args.run_name), args.run_file_path, exp_accession, center_name=args.run_center_name, fn_type=args.run_file_type)
+            run_stat, run_accession = register_run("%s/%s" % (args.sample_name, args.run_name), args.run_file_path, exp_accession, center_name=args.run_center_name, fn_type=args.run_file_type, real=args.my_data_is_ready)
             if run_stat > 1 and run_accession:
                 success = 1
 
-    print(success, args.sample_name, args.run_name, args.run_file_path, args.study_accession, sample_accession, exp_accession, run_accession)
+    print(success, args.my_data_is_ready, args.sample_name, args.run_name, args.run_file_path, args.study_accession, sample_accession, exp_accession, run_accession)
