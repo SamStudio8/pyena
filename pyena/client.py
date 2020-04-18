@@ -246,13 +246,13 @@ def cli():
 
     sample_stat, sample_accession = register_sample(args.sample_name, args.sample_taxon, args.sample_center_name)
     if sample_stat > 0:
-        exp_stat, exp_accession = register_experiment('alias', args.study_accession, sample_accession, args.run_instrument.replace("_", " "), library_d={
+        exp_stat, exp_accession = register_experiment(args.run_name, args.study_accession, sample_accession, args.run_instrument.replace("_", " "), library_d={
             "source": args.run_lib_source.replace("_", " "),
             "selection": args.run_lib_selection.replace("_", " "),
             "strategy": args.run_lib_strategy.replace("_", " "),
         })
         if exp_stat > 0:
-            run_stat, run_accession = register_run('alias', args.run_file_path, exp_accession, fn_type=args.run_file_type)
+            run_stat, run_accession = register_run("%s/%s" % (args.sample_name, args.run_name), args.run_file_path, exp_accession, fn_type=args.run_file_type)
             if run_stat > 1 and run_accession:
                 success = 1
 
