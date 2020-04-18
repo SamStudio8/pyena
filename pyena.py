@@ -93,22 +93,6 @@ def handle_response(status_code, content, accession=False):
 
     return response_code, response_accession
 
-def register_project(project_alias, project_title, project_description):
-
-    p_xml = '''
-    <PROJECT_SET>
-    <PROJECT alias="''' + project_alias + '''">
-        <TITLE>''' + project_title + '''</TITLE>
-        <DESCRIPTION>''' + project_description + '''</DESCRIPTION>
-        <SUBMISSION_PROJECT>
-            <SEQUENCING_PROJECT/>
-        </SUBMISSION_PROJECT>
-    </PROJECT>
-    </PROJECT_SET>
-    '''
-
-    return submit_today("PROJECT", p_xml, release_asap=True)
-
 
 def submit_today(submit_type, payload, release_asap=False):
     files = {}
@@ -222,10 +206,9 @@ def main():
 
 if __name__ == "__main__":
     import argparse
-    project_stat, project_accession = register_project('alias', 'title', 'description')
 
-    if project_stat:
-        sample_stat, sample_accession = register_sample('alias', '2697049', 'centre')
+    project_accession = os.environ.get('WEBIN_STUDY')
+    sample_stat, sample_accession = register_sample('alias', '2697049', 'centre')
 
     if sample_stat:
         exp_stat, exp_accession = register_experiment('alias', project_accession, sample_accession, 'miseq', 'AMPLICON', 'VIRAL RNA', 'PCR')
