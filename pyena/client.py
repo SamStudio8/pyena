@@ -13,7 +13,7 @@ WEBIN_PASS = os.environ.get('WEBIN_PASS')
 
 def _add_today():
     return '''
-    <SUBMISSION>
+    <SUBMISSION center_name="center">
     <ACTIONS>
         <ACTION>
             <ADD/>
@@ -27,7 +27,7 @@ def _add_today():
 
 def _release_target(target):
     release_xml = '''
-    <SUBMISSION>
+    <SUBMISSION center_name="center">
     <ACTIONS>
         <ACTION>
             <RELEASE target="%s" />
@@ -101,7 +101,8 @@ def submit_today(submit_type, payload, release_asap=False):
     r = requests.post("https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
             files=files,
             auth=HTTPBasicAuth(WEBIN_USER, WEBIN_PASS))
-
+    print(payload)
+    print(_add_today())
     status, accession = handle_response(r.status_code, r.text, accession=submit_type)
     if release_asap and status == 0:
         r = _release_target(accession)
@@ -199,19 +200,17 @@ def register_run(run_alias, fn, exp_accession, fn_checksum, fn_type="bam"):
         </RUN>
     </RUN_SET>
     '''
-    submit_today("RUN", r_xml, release_asap=True)
+    return submit_today("RUN", r_xml, release_asap=True)
 
-def main():
-    pass
-
-if __name__ == "__main__":
+def cli():
     import argparse
 
     project_accession = os.environ.get('WEBIN_STUDY')
-    sample_stat, sample_accession = register_sample('alias', '2697049', 'centre')
+    sample_stat, sample_accession = register_sample('sdfkasdjflkasdjflkasdjf', '2697049', 'my cool test centre')
 
-    if sample_stat:
-        exp_stat, exp_accession = register_experiment('alias', project_accession, sample_accession, 'miseq', 'AMPLICON', 'VIRAL RNA', 'PCR')
+    #if sample_stat:
+    #    exp_stat, exp_accession = register_experiment('alias', project_accession, sample_accession, 'miseq', 'AMPLICON', 'VIRAL RNA', 'PCR')
+    #   if exp_stat:
+    #       run_stat, run_accession = register_run('alias', 'test.bam', exp_accession, fn_type="bam", fn_checksum="b1946ac92492d2347c6235b4d2611184")
 
-    if exp_stat:
-        register_run('alias', 'test.bam', exp_accession, fn_type="bam", fn_checksum="b1946ac92492d2347c6235b4d2611184")
+    print(project_accession, sample_accession, exp_accession, run_accesison)
