@@ -135,7 +135,7 @@ def register_sample(sample_alias, taxon_id, center_name, real=False):
     s_xml = '''
     <SAMPLE_SET>
     <SAMPLE alias="''' + sample_alias + '''" center_name="''' + center_name + '''">
-    <TITLE>sample_title</TITLE>
+    <TITLE>''' + sample_alias + '''</TITLE>
     <SAMPLE_NAME>
       <TAXON_ID>''' + taxon_id + '''</TAXON_ID>
     </SAMPLE_NAME>
@@ -182,7 +182,7 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
     e_xml = '''
     <EXPERIMENT_SET>
     <EXPERIMENT alias="''' + exp_alias + '''" center_name="''' + center_name + '''">
-       <TITLE>RUN OF SAMPLES</TITLE>
+       <TITLE>''' + exp_alias + '''</TITLE>
        <STUDY_REF accession="''' + study_accession + '''"/>
        <DESIGN>
            <DESIGN_DESCRIPTION/>
