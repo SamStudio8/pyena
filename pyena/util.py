@@ -1,4 +1,7 @@
 # stolen from samstdio8/ocarina, nice one me
+import hashlib
+from datetime import datetime
+
 def hashfile(path, halg=hashlib.md5, bs=65536, force_hash=True):
     start_time = datetime.now()
 

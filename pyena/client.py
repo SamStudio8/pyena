@@ -1,4 +1,5 @@
 import os
+import argparse
 import sys
 import requests
 from ftplib import FTP, FTP_TLS
@@ -6,6 +7,8 @@ from socket import timeout
 from datetime import datetime
 from requests.auth import HTTPBasicAuth
 from bs4 import BeautifulSoup as bs         # pip install bs4 lxml
+
+from .util import hashfile
 
 WEBIN_USER = os.environ.get('WEBIN_USER')
 WEBIN_PASS = os.environ.get('WEBIN_PASS')
@@ -67,12 +70,12 @@ def handle_response(status_code, content, accession=False):
                 if "already exists in the submission account with accession:" in error.text:
                     response_accession = error.text.split()[-1].replace('"', "").replace('.', "")
                     response_code = 1
-                    print("Accession %s already exists. Moving on..." % response_accession)
+                    print("[SKIP] Accession %s already exists. Moving on..." % response_accession)
                     break
                 elif "has already been submitted and is waiting to be processed" in error.text:
                     response_accession = error.text.split()[1].replace("object(", "").replace(")", "")
                     response_code = 1
-                    print("Accession %s already exists. Moving on..." % response_accession)
+                    print("[SKIP] Accession %s already exists. Moving on..." % response_accession)
                     break
             if not response_accession:
                 print('*' * 80)
@@ -101,8 +104,8 @@ def submit_today(submit_type, payload, release_asap=False):
     r = requests.post("https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
             files=files,
             auth=HTTPBasicAuth(WEBIN_USER, WEBIN_PASS))
-    print(payload)
-    print(_add_today())
+    #print(payload)
+    #print(_add_today())
     status, accession = handle_response(r.status_code, r.text, accession=submit_type)
     if release_asap and status == 0:
         r = _release_target(accession)
@@ -126,7 +129,7 @@ def register_sample(sample_alias, taxon_id, centre_name):
 
     return submit_today("SAMPLE", s_xml, release_asap=True)
 
-def register_experiment(exp_alias, study_accession, sample_accession, instrument, strategy, source, selection):
+def register_experiment(exp_alias, study_accession, sample_accession, instrument, library_d):
     platform_stanza = ""
 
     if instrument == "miseq":
@@ -162,9 +165,9 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
            <SAMPLE_DESCRIPTOR accession="''' + sample_accession + '''"/>
            <LIBRARY_DESCRIPTOR>
                <LIBRARY_NAME/>
-               <LIBRARY_STRATEGY>''' + strategy + '''</LIBRARY_STRATEGY>
-               <LIBRARY_SOURCE>''' + source + '''</LIBRARY_SOURCE>
-               <LIBRARY_SELECTION>''' + selection + '''</LIBRARY_SELECTION>
+               <LIBRARY_STRATEGY>''' + library_d["strategy"] + '''</LIBRARY_STRATEGY>
+               <LIBRARY_SOURCE>''' + library_d["source"] + '''</LIBRARY_SOURCE>
+               <LIBRARY_SELECTION>''' + library_d["selection"] + '''</LIBRARY_SELECTION>
                <LIBRARY_LAYOUT>''' + "".join(layout_stanza) + '''</LIBRARY_LAYOUT>
            </LIBRARY_DESCRIPTOR>
        </DESIGN>
@@ -180,13 +183,15 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
     # Register experiment to add run to
     return submit_today("EXPERIMENT", e_xml, release_asap=True)
 
-def register_run(run_alias, fn, exp_accession, fn_checksum, fn_type="bam"):
+def register_run(run_alias, fn, exp_accession, fn_type="bam"):
     try:
         ftp = FTP('webin.ebi.ac.uk', user=WEBIN_USER, passwd=WEBIN_PASS, timeout=30)
         ftp.storbinary('STOR %s' % fn, open(fn, 'rb'))
         ftp.quit()
     except timeout:
         print("BOOOOOOO")
+
+    fn_checksum = hashfile(fn)
 
     r_xml = '''
     <RUN_SET>
@@ -203,14 +208,39 @@ def register_run(run_alias, fn, exp_accession, fn_checksum, fn_type="bam"):
     return submit_today("RUN", r_xml, release_asap=True)
 
 def cli():
-    import argparse
+    parser = argparse.ArgumentParser()
 
-    project_accession = os.environ.get('WEBIN_STUDY')
-    sample_stat, sample_accession = register_sample('sdfkasdjflkasdjflkasdjf', '2697049', 'my cool test centre')
+    parser.add_argument("--study-accession", required=True)
 
-    #if sample_stat:
-    #    exp_stat, exp_accession = register_experiment('alias', project_accession, sample_accession, 'miseq', 'AMPLICON', 'VIRAL RNA', 'PCR')
-    #   if exp_stat:
-    #       run_stat, run_accession = register_run('alias', 'test.bam', exp_accession, fn_type="bam", fn_checksum="b1946ac92492d2347c6235b4d2611184")
+    parser.add_argument("--sample-name", required=True)
+    parser.add_argument("--sample-center-name", required=True)
+    parser.add_argument("--sample-taxon", required=False, default="2697049")
 
-    print(project_accession, sample_accession, exp_accession, run_accesison)
+    parser.add_argument("--run-name", required=True)
+    parser.add_argument("--run-file-path", required=True)
+    parser.add_argument("--run-file-type", required=False, default="bam")
+    parser.add_argument("--run-center-name", required=True)
+    parser.add_argument("--run-instrument", required=True)
+    parser.add_argument("--run-lib-source", required=True)
+    parser.add_argument("--run-lib-selection", required=True)
+    parser.add_argument("--run-lib-strategy", required=True)
+
+
+    args = parser.parse_args()
+
+    sample_accession = exp_accession = run_accession = None
+    success = 0
+
+    sample_stat, sample_accession = register_sample(args.sample_name, args.sample_taxon, args.sample_center_name)
+    if sample_stat:
+        exp_stat, exp_accession = register_experiment('alias', args.study_accession, sample_accession, args.run_instrument.replace("_", " "), library_d={
+            "source": args.run_lib_source.replace("_", " "),
+            "selection": args.run_lib_selection.replace("_", " "),
+            "strategy": args.run_lib_strategy.replace("_", " "),
+        })
+        if exp_stat:
+            run_stat, run_accession = register_run('alias', args.run_file_path, exp_accession, fn_type=args.run_file_type)
+            if run_stat and run_accession:
+                success = 1
+
+    print(success, args.sample_name, args.run_name, args.run_file_path, args.study_accession, sample_accession, exp_accession, run_accession)
