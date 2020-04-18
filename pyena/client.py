@@ -81,9 +81,10 @@ def handle_response(status_code, content, accession=False):
                     sys.stderr.write("[SKIP] Accession %s already exists. Moving on...\n" % response_accession)
                     break
                 elif "has already been submitted and is waiting to be processed" in error.text:
-                    response_accession = error.text.split()[1].replace("object(", "").replace(")", "")
+                    #response_accession = error.text.split()[1].replace("object(", "").replace(")", "")
+                    response_accession = error.text.split()[4]
                     response_code = 1
-                    sys.stderr.write("[SKIP] Accession %s already exists. Moving on...\n" % response_accession)
+                    sys.stderr.write("[SKIP] File %s already uploaded. Cannot release again. Moving on...\n" % response_accession)
                     break
             if not response_accession:
                 sys.stderr.write("\n".join([
