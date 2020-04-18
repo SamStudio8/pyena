@@ -195,7 +195,7 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
     # Register experiment to add run to
     return submit_today("EXPERIMENT", e_xml, center_name, release_asap=True)
 
-def register_run(run_alias, fn, exp_accession, fn_type="bam", center_name):
+def register_run(run_alias, fn, exp_accession, center_name, fn_type="bam"):
     try:
         ftp = FTP('webin.ebi.ac.uk', user=WEBIN_USER, passwd=WEBIN_PASS, timeout=30)
         ftp.storbinary('STOR %s' % os.path.basename(fn), open(fn, 'rb'))
@@ -252,7 +252,7 @@ def cli():
             "strategy": args.run_lib_strategy.replace("_", " "),
         }, center_name=args.run_center_name)
         if exp_stat > 0:
-            run_stat, run_accession = register_run("%s/%s" % (args.sample_name, args.run_name), args.run_file_path, exp_accession, fn_type=args.run_file_type, center_name=args.run_center_name)
+            run_stat, run_accession = register_run("%s/%s" % (args.sample_name, args.run_name), args.run_file_path, exp_accession, center_name=args.run_center_name, fn_type=args.run_file_type)
             if run_stat > 1 and run_accession:
                 success = 1
 
