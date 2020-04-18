@@ -54,12 +54,14 @@ def handle_response(status_code, content, accession=False):
 
     if status_code != 200:
         # NOT 200
-        print('*' * 80)
-        print("ENA responded with HTTP %s." % status_code)
-        print("I don't know how to handle this. For your information, the response is below:")
-        print('*' * 80)
-        print(content)
-        print('*' * 80)
+        sys.stderr.write("\n".join([
+            '*' * 80,
+            "ENA responded with HTTP %s." % status_code,
+            "I don't know how to handle this. For your information, the response is below:",
+            '*' * 80,
+            content,
+            '*' * 80,
+            ]))
         response_code = -1
     else:
         # OK 200
@@ -70,20 +72,22 @@ def handle_response(status_code, content, accession=False):
                 if "already exists in the submission account with accession:" in error.text:
                     response_accession = error.text.split()[-1].replace('"', "").replace('.', "")
                     response_code = 1
-                    print("[SKIP] Accession %s already exists. Moving on..." % response_accession)
+                    sys.stderr.write("[SKIP] Accession %s already exists. Moving on...\n" % response_accession)
                     break
                 elif "has already been submitted and is waiting to be processed" in error.text:
                     response_accession = error.text.split()[1].replace("object(", "").replace(")", "")
                     response_code = 1
-                    print("[SKIP] Accession %s already exists. Moving on..." % response_accession)
+                    sys.stderr.write("[SKIP] Accession %s already exists. Moving on...\n" % response_accession)
                     break
             if not response_accession:
-                print('*' * 80)
-                print("ENA responded with HTTP 200, but there were ERROR messages in the response.")
-                print("I don't know how to handle this. For your information, the response is below:")
-                print('*' * 80)
-                print(content)
-                print('*' * 80)
+                sys.stderr.write("\n".join([
+                    '*' * 80,
+                    "ENA responded with HTTP 200, but there were ERROR messages in the response.",
+                    "I don't know how to handle this. For your information, the response is below:",
+                    '*' * 80,
+                    content,
+                    '*' * 80,
+                ]))
                 response_code = -1
         else:
             if accession:
@@ -188,8 +192,9 @@ def register_run(run_alias, fn, exp_accession, fn_type="bam"):
         ftp = FTP('webin.ebi.ac.uk', user=WEBIN_USER, passwd=WEBIN_PASS, timeout=30)
         ftp.storbinary('STOR %s' % fn, open(fn, 'rb'))
         ftp.quit()
-    except timeout:
-        print("BOOOOOOO")
+    except Exception:
+        sys.stderr.write("[FAIL] FTP transfer timed out or failed for %s" % fn)
+        return -1, None
 
     fn_checksum = hashfile(fn)
 
@@ -228,7 +233,7 @@ def cli():
 
     args = parser.parse_args()
 
-    sample_accession = exp_accession = run_accession = None
+    sample_accession = exp_accession = run_accession = '-'
     success = 0
 
     sample_stat, sample_accession = register_sample(args.sample_name, args.sample_taxon, args.sample_center_name)
