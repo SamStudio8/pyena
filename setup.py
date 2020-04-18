@@ -6,6 +6,7 @@ from pyena import version
 
 requirements = [
     "requests",
+    "bs4",
 ]
 
 test_requirements = [
