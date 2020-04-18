@@ -259,15 +259,15 @@ def cli():
     success = 0
 
     sample_stat, sample_accession = register_sample(args.sample_name, args.sample_taxon, args.sample_center_name, real=args.my_data_is_ready)
-    if sample_stat > 0:
+    if sample_stat >= 0:
         exp_stat, exp_accession = register_experiment(args.run_name, args.study_accession, sample_accession, args.run_instrument.replace("_", " "), library_d={
             "source": args.run_lib_source.replace("_", " "),
             "selection": args.run_lib_selection.replace("_", " "),
             "strategy": args.run_lib_strategy.replace("_", " "),
         }, center_name=args.run_center_name, real=args.my_data_is_ready)
-        if exp_stat > 0:
+        if exp_stat >= 0:
             run_stat, run_accession = register_run("%s/%s" % (args.sample_name, args.run_name), args.run_file_path, exp_accession, center_name=args.run_center_name, fn_type=args.run_file_type, real=args.my_data_is_ready)
-            if run_stat > 1 and run_accession:
+            if run_stat >= 0 and run_accession:
                 success = 1
 
     print(success, 1 if args.my_data_is_ready else 0, args.sample_name, args.run_name, args.run_file_path, args.study_accession, sample_accession, exp_accession, run_accession)
