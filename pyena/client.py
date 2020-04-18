@@ -233,19 +233,19 @@ def cli():
 
     args = parser.parse_args()
 
-    sample_accession = exp_accession = run_accession = '-'
+    sample_accession = exp_accession = run_accession = None
     success = 0
 
     sample_stat, sample_accession = register_sample(args.sample_name, args.sample_taxon, args.sample_center_name)
-    if sample_stat:
+    if sample_stat > 0:
         exp_stat, exp_accession = register_experiment('alias', args.study_accession, sample_accession, args.run_instrument.replace("_", " "), library_d={
             "source": args.run_lib_source.replace("_", " "),
             "selection": args.run_lib_selection.replace("_", " "),
             "strategy": args.run_lib_strategy.replace("_", " "),
         })
-        if exp_stat:
+        if exp_stat > 0:
             run_stat, run_accession = register_run('alias', args.run_file_path, exp_accession, fn_type=args.run_file_type)
-            if run_stat and run_accession:
+            if run_stat > 1 and run_accession:
                 success = 1
 
     print(success, args.sample_name, args.run_name, args.run_file_path, args.study_accession, sample_accession, exp_accession, run_accession)

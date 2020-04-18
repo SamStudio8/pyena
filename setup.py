@@ -7,6 +7,7 @@ from pyena import version
 requirements = [
     "requests",
     "bs4",
+    "lxml",
 ]
 
 test_requirements = [
