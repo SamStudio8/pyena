@@ -115,7 +115,7 @@ def submit_today(submit_type, payload, release_asap=False):
         r = _release_target(accession)
         status, _ = handle_response(r.status_code, r.text)
         if status == 0:
-            print("[INFO] %s released successfully: %s" % (submit_type, accession))
+            sys.stderr.write("[INFO] %s released successfully: %s\n" % (submit_type, accession))
 
     return status, accession
 
