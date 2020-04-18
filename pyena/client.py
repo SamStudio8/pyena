@@ -136,18 +136,23 @@ def register_sample(sample_alias, taxon_id, centre_name):
 def register_experiment(exp_alias, study_accession, sample_accession, instrument, library_d):
     platform_stanza = ""
 
+    instrument = instrument.lower()
     if instrument == "miseq":
         platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina MiSeq</INSTRUMENT_MODEL></ILLUMINA>"
-    if instrument == "hiseq2000":
-        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina HiSeq 1500</INSTRUMENT_MODEL></ILLUMINA>"
-    if instrument == "hiseq2000":
-        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina HiSeq 2000</INSTRUMENT_MODEL></ILLUMINA>"
-    if instrument == "hiseq4000":
-        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina HiSeq 4000</INSTRUMENT_MODEL></ILLUMINA>"
-    elif instrument == "grid":
+    elif instrument == "hiseq 2500":
+        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina HiSeq 2500</INSTRUMENT_MODEL></ILLUMINA>"
+    elif instrument == "nextseq 550":
+        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina NextSeq 550</INSTRUMENT_MODEL></ILLUMINA>"
+    elif instrument == "nextseq":
+        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina NextSeq</INSTRUMENT_MODEL></ILLUMINA>"
+    elif instrument == "novaseq":
+        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina NovaSeq</INSTRUMENT_MODEL></ILLUMINA>"
+    elif instrument == "minion":
+        platform_stanza ="<OXFORD_NANOPORE><INSTRUMENT_MODEL>MinION</INSTRUMENT_MODEL></OXFORD_NANOPORE>"
+    elif instrument == "gridion":
         platform_stanza ="<OXFORD_NANOPORE><INSTRUMENT_MODEL>GridION</INSTRUMENT_MODEL></OXFORD_NANOPORE>"
         #design_stanza = "<DESIGN_DESCRIPTION>FLO-MIN106 R9.4.1C FlipFlop</DESIGN_DESCRIPTION>"
-    elif instrument == "prom":
+    elif instrument == "promethion":
         platform_stanza ="<OXFORD_NANOPORE><INSTRUMENT_MODEL>PromethION</INSTRUMENT_MODEL></OXFORD_NANOPORE>"
     else:
         sys.stderr.write("[FAIL] Unable to construct platform stanza for experiment %s with instrument %s\n" % (exp_alias, instrument))
@@ -193,10 +198,10 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
 def register_run(run_alias, fn, exp_accession, fn_type="bam"):
     try:
         ftp = FTP('webin.ebi.ac.uk', user=WEBIN_USER, passwd=WEBIN_PASS, timeout=30)
-        ftp.storbinary('STOR %s' % fn, open(fn, 'rb'))
+        ftp.storbinary('STOR %s' % os.path.basename(fn), open(fn, 'rb'))
         ftp.quit()
-    except Exception:
-        sys.stderr.write("[FAIL] FTP transfer timed out or failed for %s" % fn)
+    except Exception as e:
+        sys.stderr.write("[FAIL] FTP transfer timed out or failed for %s\n%s" % (fn, e))
         return -1, None
 
     fn_checksum = hashfile(fn)
@@ -207,7 +212,7 @@ def register_run(run_alias, fn, exp_accession, fn_type="bam"):
             <EXPERIMENT_REF accession="''' + exp_accession + '''"/>
             <DATA_BLOCK>
                 <FILES>
-                    <FILE filename="''' + fn + '''" filetype="''' + fn_type + '''" checksum_method="MD5" checksum="''' + fn_checksum + '''" />
+                    <FILE filename="''' + os.path.basename(fn) + '''" filetype="''' + fn_type + '''" checksum_method="MD5" checksum="''' + fn_checksum + '''" />
                 </FILES>
             </DATA_BLOCK>
         </RUN>
