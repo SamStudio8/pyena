@@ -14,9 +14,9 @@ WEBIN_USER = os.environ.get('WEBIN_USER')
 WEBIN_PASS = os.environ.get('WEBIN_PASS')
 
 
-def _add_today():
+def _add_today(center_name):
     return '''
-    <SUBMISSION center_name="center">
+    <SUBMISSION center_name="''' + center_name + '''">
     <ACTIONS>
         <ACTION>
             <ADD/>
@@ -28,9 +28,9 @@ def _add_today():
     </SUBMISSION>
     ''' % datetime.today().strftime('%Y-%m-%d')
 
-def _release_target(target):
+def _release_target(target, center_name):
     release_xml = '''
-    <SUBMISSION center_name="center">
+    <SUBMISSION center_name="''' + center_name + '''">
     <ACTIONS>
         <ACTION>
             <RELEASE target="%s" />
@@ -101,10 +101,10 @@ def handle_response(status_code, content, accession=False):
     return response_code, response_accession
 
 
-def submit_today(submit_type, payload, release_asap=False):
+def submit_today(submit_type, payload, center_name, release_asap=False):
     files = {}
     files[submit_type] = payload
-    files["SUBMISSION"] = _add_today()
+    files["SUBMISSION"] = _add_today(center_name)
     r = requests.post("https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit/",
             files=files,
             auth=HTTPBasicAuth(WEBIN_USER, WEBIN_PASS))
@@ -112,17 +112,17 @@ def submit_today(submit_type, payload, release_asap=False):
     #print(_add_today())
     status, accession = handle_response(r.status_code, r.text, accession=submit_type)
     if release_asap and status == 0:
-        r = _release_target(accession)
+        r = _release_target(accession, center_name)
         status, _ = handle_response(r.status_code, r.text)
         if status == 0:
             sys.stderr.write("[INFO] %s released successfully: %s\n" % (submit_type, accession))
 
     return status, accession
 
-def register_sample(sample_alias, taxon_id, centre_name):
+def register_sample(sample_alias, taxon_id, center_name):
     s_xml = '''
     <SAMPLE_SET>
-    <SAMPLE alias="''' + sample_alias + '''" center_name="''' + centre_name + '''">
+    <SAMPLE alias="''' + sample_alias + '''" center_name="''' + center_name + '''">
     <TITLE>sample_title</TITLE>
     <SAMPLE_NAME>
       <TAXON_ID>''' + taxon_id + '''</TAXON_ID>
@@ -131,9 +131,9 @@ def register_sample(sample_alias, taxon_id, centre_name):
     </SAMPLE_SET>
     '''
 
-    return submit_today("SAMPLE", s_xml, release_asap=True)
+    return submit_today("SAMPLE", s_xml, center_name, release_asap=True)
 
-def register_experiment(exp_alias, study_accession, sample_accession, instrument, library_d):
+def register_experiment(exp_alias, study_accession, sample_accession, instrument, library_d, center_name):
     platform_stanza = ""
 
     instrument = instrument.lower()
@@ -169,7 +169,7 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
 
     e_xml = '''
     <EXPERIMENT_SET>
-    <EXPERIMENT alias="''' + exp_alias + '''" center_name="my centre">
+    <EXPERIMENT alias="''' + exp_alias + '''" center_name="''' + center_name + '''">
        <TITLE>RUN OF SAMPLES</TITLE>
        <STUDY_REF accession="''' + study_accession + '''"/>
        <DESIGN>
@@ -193,7 +193,7 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
     '''
 
     # Register experiment to add run to
-    return submit_today("EXPERIMENT", e_xml, release_asap=True)
+    return submit_today("EXPERIMENT", e_xml, center_name, release_asap=True)
 
 def register_run(run_alias, fn, exp_accession, fn_type="bam"):
     try:
@@ -208,7 +208,7 @@ def register_run(run_alias, fn, exp_accession, fn_type="bam"):
 
     r_xml = '''
     <RUN_SET>
-        <RUN alias="''' + run_alias + '''" center_name="my centre">
+        <RUN alias="''' + run_alias + '''" center_name="''' + center_name + '''">
             <EXPERIMENT_REF accession="''' + exp_accession + '''"/>
             <DATA_BLOCK>
                 <FILES>
@@ -218,7 +218,7 @@ def register_run(run_alias, fn, exp_accession, fn_type="bam"):
         </RUN>
     </RUN_SET>
     '''
-    return submit_today("RUN", r_xml, release_asap=True)
+    return submit_today("RUN", r_xml, center_name, release_asap=True)
 
 def cli():
     parser = argparse.ArgumentParser()
@@ -250,7 +250,7 @@ def cli():
             "source": args.run_lib_source.replace("_", " "),
             "selection": args.run_lib_selection.replace("_", " "),
             "strategy": args.run_lib_strategy.replace("_", " "),
-        })
+        }, center_name=args.run_center_name)
         if exp_stat > 0:
             run_stat, run_accession = register_run("%s/%s" % (args.sample_name, args.run_name), args.run_file_path, exp_accession, fn_type=args.run_file_type)
             if run_stat > 1 and run_accession:
