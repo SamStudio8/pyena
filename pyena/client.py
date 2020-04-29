@@ -132,7 +132,9 @@ def submit_today(submit_type, payload, center_name, release_asap=False, real=Fal
 
     return status, accession
 
-def register_sample(sample_alias, taxon_id, center_name, real=False):
+def register_sample(sample_alias, taxon_id, center_name, attributes={}, real=False):
+    s_attributes = "\n".join(["<SAMPLE_ATTRIBUTE><TAG>%s</TAG><VALUE>%s</VALUE></SAMPLE_ATTRIBUTE>" % (k, v) for k,v in attributes.items() if v is not None])
+
     s_xml = '''
     <SAMPLE_SET>
     <SAMPLE alias="''' + sample_alias + '''" center_name="''' + center_name + '''">
@@ -140,6 +142,7 @@ def register_sample(sample_alias, taxon_id, center_name, real=False):
     <SAMPLE_NAME>
       <TAXON_ID>''' + taxon_id + '''</TAXON_ID>
     </SAMPLE_NAME>
+    <SAMPLE_ATTRIBUTES>''' + s_attributes + '''</SAMPLE_ATTRIBUTES>
     </SAMPLE>
     </SAMPLE_SET>
     '''
@@ -240,6 +243,7 @@ def cli():
 
     parser.add_argument("--study-accession", required=True)
 
+    parser.add_argument("--sample-attr", action='append', nargs=2, metavar=('tag', 'value'))
     parser.add_argument("--sample-name", required=True)
     parser.add_argument("--sample-center-name", required=True)
     parser.add_argument("--sample-taxon", required=False, default="2697049")
@@ -259,7 +263,7 @@ def cli():
     sample_accession = exp_accession = run_accession = None
     success = 0
 
-    sample_stat, sample_accession = register_sample(args.sample_name, args.sample_taxon, args.sample_center_name, real=args.my_data_is_ready)
+    sample_stat, sample_accession = register_sample(args.sample_name, args.sample_taxon, args.sample_center_name, {x[0]: x[1] for x in args.sample_attr}, real=args.my_data_is_ready)
     if sample_stat >= 0:
         exp_stat, exp_accession = register_experiment("%s/%s" % (args.sample_name, args.run_name), args.study_accession, sample_accession, args.run_instrument.replace("_", " "), library_d={
             "source": args.run_lib_source.replace("_", " "),
