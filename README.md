@@ -1,2 +1,2 @@
 # pyena
-a shoddy script to send reads to ena
+a hilariously simple script to send raw reads to ena
