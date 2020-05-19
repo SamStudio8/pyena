@@ -237,14 +237,16 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
     # Register experiment to add run to
     return submit_today("EXPERIMENT", e_xml, center_name, release_asap=True, real=real)
 
-def register_run(run_alias, fn, exp_accession, center_name, fn_type="bam", real=False):
-    try:
-        ftp = FTP('webin.ebi.ac.uk', user=WEBIN_USER, passwd=WEBIN_PASS, timeout=30)
-        ftp.storbinary('STOR %s' % os.path.basename(fn), open(fn, 'rb'))
-        ftp.quit()
-    except Exception as e:
-        sys.stderr.write("[FAIL] FTP transfer timed out or failed for %s\n%s" % (fn, e))
-        return -1, None
+def register_run(run_alias, fn, exp_accession, center_name, fn_type="bam", real=False, do_upload=True):
+
+    if do_upload:
+        try:
+            ftp = FTP('webin.ebi.ac.uk', user=WEBIN_USER, passwd=WEBIN_PASS, timeout=30)
+            ftp.storbinary('STOR %s' % os.path.basename(fn), open(fn, 'rb'))
+            ftp.quit()
+        except Exception as e:
+            sys.stderr.write("[FAIL] FTP transfer timed out or failed for %s\n%s" % (fn, e))
+            return -1, None
 
     fn_checksum = hashfile(fn)
 
@@ -266,6 +268,7 @@ def cli():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--my-data-is-ready", action="store_true")
+    parser.add_argument("--no-ftp", action="store_true")
 
     parser.add_argument("--study-accession", required=True)
 
@@ -297,7 +300,8 @@ def cli():
             "strategy": args.run_lib_strategy.replace("_", " "),
         }, center_name=args.run_center_name, real=args.my_data_is_ready)
         if exp_stat >= 0:
-            run_stat, run_accession = register_run(args.run_name, args.run_file_path, exp_accession, center_name=args.run_center_name, fn_type=args.run_file_type, real=args.my_data_is_ready)
+            do_upload = False if args.no_ftp else True
+            run_stat, run_accession = register_run(args.run_name, args.run_file_path, exp_accession, center_name=args.run_center_name, fn_type=args.run_file_type, real=args.my_data_is_ready, upload=do_upload)
             if run_stat >= 0 and run_accession:
                 success = 1
 
