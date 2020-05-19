@@ -159,8 +159,8 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
         platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina HiSeq 2500</INSTRUMENT_MODEL></ILLUMINA>"
     elif instrument == "nextseq 550":
         platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina NextSeq 550</INSTRUMENT_MODEL></ILLUMINA>"
-    elif instrument == "nextseq":
-        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina NextSeq</INSTRUMENT_MODEL></ILLUMINA>"
+    elif instrument == "nextseq 500":
+        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina NextSeq 500</INSTRUMENT_MODEL></ILLUMINA>"
     elif instrument == "novaseq":
         platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina NovaSeq</INSTRUMENT_MODEL></ILLUMINA>"
     elif instrument == "minion":
