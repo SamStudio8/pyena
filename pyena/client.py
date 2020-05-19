@@ -16,7 +16,7 @@ WEBIN_PASS = os.environ.get('WEBIN_PASS')
 def _convert_platform(instrument_name):
     # Based on https://github.com/enasequence/schema/blob/master/src/main/resources/uk/ac/ebi/ena/sra/schema/SRA.common.xsd
     valid_enums = {
-        "ILLUMINA": [
+        "ILLUMINA": {
             "X Five": "HiSeq X Five",
             "X Ten": "HiSeq X Ten",
             "Genome Analyzer": "Illumina Genome Analyzer",
@@ -40,12 +40,12 @@ def _convert_platform(instrument_name):
             "iseq": "unspecified", # catch all
             "novaseq": "unspecified", # catch all
             "nextseq": "unspecified", # catch all
-        ],
-        "OXFORD_NANOPORE": [
+        },
+        "OXFORD_NANOPORE": {
             "MinION": "MinION",
             "GridION": "GridION",
             "PromethION": "PromethION",
-        ]
+        }
     }
 
     instrument_name = instrument_name.replace('_', ' ').lower()
