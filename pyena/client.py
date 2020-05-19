@@ -286,3 +286,5 @@ def cli():
         exp_accession,
         run_accession
     ]]) + '\n')
+    if not success:
+        sys.exit(2)
