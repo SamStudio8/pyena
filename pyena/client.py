@@ -297,7 +297,7 @@ def cli():
         exp_stat, exp_accession = register_experiment(args.run_name, args.study_accession, sample_accession, args.run_instrument.replace("_", " "), library_d={
             "source": args.run_lib_source.replace("_", " "),
             "selection": args.run_lib_selection.replace("_", " "),
-            "strategy": args.run_lib_strategy.replace("_", " "),
+            "strategy": args.run_lib_strategy.replace("_", "-"),
         }, center_name=args.run_center_name, real=args.my_data_is_ready)
         if exp_stat >= 0:
             do_upload = False if args.no_ftp else True
