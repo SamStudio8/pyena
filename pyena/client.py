@@ -237,9 +237,9 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
     # Register experiment to add run to
     return submit_today("EXPERIMENT", e_xml, center_name, release_asap=True, real=real)
 
-def register_run(run_alias, fn, exp_accession, center_name, fn_type="bam", real=False, do_upload=True):
+def register_run(run_alias, fn, exp_accession, center_name, fn_type="bam", real=False, upload=True):
 
-    if do_upload:
+    if upload:
         try:
             ftp = FTP('webin.ebi.ac.uk', user=WEBIN_USER, passwd=WEBIN_PASS, timeout=30)
             ftp.storbinary('STOR %s' % os.path.basename(fn), open(fn, 'rb'))
