@@ -13,6 +13,47 @@ from .util import hashfile
 WEBIN_USER = os.environ.get('WEBIN_USER')
 WEBIN_PASS = os.environ.get('WEBIN_PASS')
 
+def _convert_platform(instrument_name):
+    # Based on https://github.com/enasequence/schema/blob/master/src/main/resources/uk/ac/ebi/ena/sra/schema/SRA.common.xsd
+    valid_enums = {
+        "ILLUMINA": [
+            "X Five": "HiSeq X Five",
+            "X Ten": "HiSeq X Ten",
+            "Genome Analyzer": "Illumina Genome Analyzer",
+            "Genome Analyzer II": "Illumina Genome Analyzer II",
+            "Genome Analyzer IIx": "Illumina Genome Analyzer IIx",
+            "HiScanSQ": "Illumina HiScanSQ",
+            "HiSeq 1000": "Illumina HiSeq 1000",
+            "HiSeq 1500": "Illumina HiSeq 1500",
+            "HiSeq 2000": "Illumina HiSeq 2000",
+            "HiSeq 2500": "Illumina HiSeq 2500",
+            "HiSeq 3000": "Illumina HiSeq 3000",
+            "HiSeq 4000": "Illumina HiSeq 4000",
+            "iSeq 100": "Illumina iSeq 100",
+            "MiSeq": "Illumina MiSeq",
+            "MiniSeq": "Illumina MiniSeq",
+            "NovaSeq 6000": "Illumina NovaSeq 6000",
+            "NextSeq 500": "NextSeq 500",
+            "NextSeq 550": "NextSeq 550",
+            "hiseq": "unspecified", # catch all
+            "miseq": "unspecified", # catch all
+            "iseq": "unspecified", # catch all
+            "novaseq": "unspecified", # catch all
+            "nextseq": "unspecified", # catch all
+        ],
+        "OXFORD_NANOPORE": [
+            "MinION": "MinION",
+            "GridION": "GridION",
+            "PromethION": "PromethION",
+        ]
+    }
+
+    instrument_name = instrument_name.replace('_', ' ').lower()
+    for instrument_make, instrument_models in valid_enums.items():
+        for possible_model in instrument_models:
+            if possible_model.lower() in instrument_name:
+                return instrument_make, possible_model
+    return None, None
 
 def _add_today(center_name):
     return '''
@@ -150,29 +191,14 @@ def register_sample(sample_alias, taxon_id, center_name, attributes={}, real=Fal
     return submit_today("SAMPLE", s_xml, center_name, release_asap=True, real=real)
 
 def register_experiment(exp_alias, study_accession, sample_accession, instrument, library_d, center_name, real=False):
-    platform_stanza = ""
 
-    instrument = instrument.lower()
-    if instrument == "miseq":
-        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina MiSeq</INSTRUMENT_MODEL></ILLUMINA>"
-    elif instrument == "hiseq 2500":
-        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina HiSeq 2500</INSTRUMENT_MODEL></ILLUMINA>"
-    elif instrument == "nextseq 550":
-        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina NextSeq 550</INSTRUMENT_MODEL></ILLUMINA>"
-    elif instrument == "nextseq 500":
-        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina NextSeq 500</INSTRUMENT_MODEL></ILLUMINA>"
-    elif instrument == "novaseq":
-        platform_stanza = "<ILLUMINA><INSTRUMENT_MODEL>Illumina NovaSeq</INSTRUMENT_MODEL></ILLUMINA>"
-    elif instrument == "minion":
-        platform_stanza ="<OXFORD_NANOPORE><INSTRUMENT_MODEL>MinION</INSTRUMENT_MODEL></OXFORD_NANOPORE>"
-    elif instrument == "gridion":
-        platform_stanza ="<OXFORD_NANOPORE><INSTRUMENT_MODEL>GridION</INSTRUMENT_MODEL></OXFORD_NANOPORE>"
-        #design_stanza = "<DESIGN_DESCRIPTION>FLO-MIN106 R9.4.1C FlipFlop</DESIGN_DESCRIPTION>"
-    elif instrument == "promethion":
-        platform_stanza ="<OXFORD_NANOPORE><INSTRUMENT_MODEL>PromethION</INSTRUMENT_MODEL></OXFORD_NANOPORE>"
+    platform, model = _convert_platform(instrument)
+    if platform:
+        platform_stanza = "<%s><INSTRUMENT_MODEL>%s</INSTRUMENT_MODEL></%s>" % (platform, model, platform)
     else:
-        sys.stderr.write("[FAIL] Unable to construct platform stanza for experiment %s with instrument %s\n" % (exp_alias, instrument))
-        return -1, None
+        #sys.stderr.write("[FAIL] Unable to construct platform stanza for experiment %s with instrument %s\n" % (exp_alias, instrument))
+        #return -1, None
+        platform_stanza = ""
 
     pair_size = 0
     layout_stanza = []
