@@ -50,7 +50,7 @@ def _convert_platform(instrument_name):
 
     instrument_name = instrument_name.replace('_', ' ').lower()
     for instrument_make, instrument_models in valid_enums.items():
-        for possible_model_k, possible_model_v in instrument_models:
+        for possible_model_k, possible_model_v in instrument_models.items():
             if possible_model_k.lower() in instrument_name:
                 return instrument_make, possible_model_v
     return None, None
