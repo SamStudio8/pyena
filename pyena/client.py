@@ -190,7 +190,8 @@ def register_sample(sample_alias, taxon_id, center_name, attributes={}, real=Fal
 
     return submit_today("SAMPLE", s_xml, center_name, release_asap=True, real=real)
 
-def register_experiment(exp_alias, study_accession, sample_accession, instrument, library_d, center_name, real=False):
+def register_experiment(exp_alias, study_accession, sample_accession, instrument, library_d, center_name, attributes={}, real=False):
+    e_attributes = "\n".join(["<EXPERIMENT_ATTRIBUTE><TAG>%s</TAG><VALUE>%s</VALUE></EXPERIMENT_ATTRIBUTE>" % (k, v) for k,v in attributes.items() if v is not None])
 
     platform, model = _convert_platform(instrument)
     if platform:
@@ -224,12 +225,11 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
                <LIBRARY_SELECTION>''' + library_d["selection"] + '''</LIBRARY_SELECTION>
                <LIBRARY_LAYOUT>''' + "".join(layout_stanza) + '''</LIBRARY_LAYOUT>
            </LIBRARY_DESCRIPTOR>
+           <LIBRARY_CONSTRUCTION_PROTOCOL>''' + library_d["protocol"] + '''</LIBRARY_CONSTRUCTION_PROTOCOL>
        </DESIGN>
        <PLATFORM>''' + platform_stanza + '''
        </PLATFORM>
-       <EXPERIMENT_ATTRIBUTES>
-
-       </EXPERIMENT_ATTRIBUTES>
+       <EXPERIMENT_ATTRIBUTES>''' + e_attributes + '''</EXPERIMENT_ATTRIBUTES>
     </EXPERIMENT>
     </EXPERIMENT_SET>
     '''
@@ -277,6 +277,8 @@ def cli():
     parser.add_argument("--sample-center-name", required=True)
     parser.add_argument("--sample-taxon", required=False, default="2697049")
 
+    parser.add_argument("--experiment-attr", action='append', nargs=2, metavar=('tag', 'value'))
+
     parser.add_argument("--run-name", required=True)
     parser.add_argument("--run-file-path", required=True)
     parser.add_argument("--run-file-type", required=False, default="bam")
@@ -285,6 +287,7 @@ def cli():
     parser.add_argument("--run-lib-source", required=True)
     parser.add_argument("--run-lib-selection", required=True)
     parser.add_argument("--run-lib-strategy", required=True)
+    parser.add_argument("--run-lib-protocol", required=False, default="")
 
 
     args = parser.parse_args()
@@ -294,10 +297,11 @@ def cli():
 
     sample_stat, sample_accession = register_sample(args.sample_name, args.sample_taxon, args.sample_center_name, {x[0]: x[1] for x in args.sample_attr}, real=args.my_data_is_ready)
     if sample_stat >= 0:
-        exp_stat, exp_accession = register_experiment(args.run_name, args.study_accession, sample_accession, args.run_instrument.replace("_", " "), library_d={
+        exp_stat, exp_accession = register_experiment(args.run_name, args.study_accession, sample_accession, args.run_instrument.replace("_", " ", attributes={x[0]: x[1] for x in args.experiment_attr}), library_d={
             "source": args.run_lib_source.replace("_", " "),
             "selection": args.run_lib_selection.replace("_", " "),
             "strategy": args.run_lib_strategy.replace("_", "-"),
+            "protocol": args.run_lib_protocol,
         }, center_name=args.run_center_name, real=args.my_data_is_ready)
         if exp_stat >= 0:
             do_upload = False if args.no_ftp else True
