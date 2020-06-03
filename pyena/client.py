@@ -13,6 +13,14 @@ from .util import hashfile
 WEBIN_USER = os.environ.get('WEBIN_USER')
 WEBIN_PASS = os.environ.get('WEBIN_PASS')
 
+def _convert_library_strategy(s):
+    conversions = {
+        "TARGETED_CAPTURE": "Targeted-Capture",
+    }
+    if s in conversions:
+        return conversions[s]
+    return s
+
 def _convert_platform(instrument_name):
     # Based on https://github.com/enasequence/schema/blob/master/src/main/resources/uk/ac/ebi/ena/sra/schema/SRA.common.xsd
     valid_enums = {
@@ -303,7 +311,7 @@ def cli():
         exp_stat, exp_accession = register_experiment(args.run_name, args.study_accession, sample_accession, args.run_instrument.replace("_", " "), attributes={x[0]: x[1] for x in args.experiment_attr}, library_d={
             "source": args.run_lib_source.replace("_", " "),
             "selection": args.run_lib_selection.replace("_", " "),
-            "strategy": args.run_lib_strategy.replace("_", "-"),
+            "strategy": _convert_library_strategy(args.run_lib_strategy),
             "protocol": args.run_lib_protocol,
         }, center_name=args.run_center_name, real=args.my_data_is_ready)
         if exp_stat >= 0:
