@@ -174,7 +174,7 @@ def submit_today(submit_type, payload, center_name, release_asap=False, real=Fal
     return status, accession
 
 def register_sample(sample_alias, taxon_id, center_name, attributes={}, real=False):
-    s_attributes = "\n".join(["<SAMPLE_ATTRIBUTE><TAG>%s</TAG><VALUE>%s</VALUE></SAMPLE_ATTRIBUTE>" % (k, v) for k,v in attributes.items() if v is not None])
+    s_attributes = "\n".join(["<SAMPLE_ATTRIBUTE><TAG>%s</TAG><VALUE>%s</VALUE></SAMPLE_ATTRIBUTE>" % (k, v) for k,v in attributes.items() if v is not None and len(v) > 0])
 
     s_xml = '''
     <SAMPLE_SET>
@@ -191,7 +191,7 @@ def register_sample(sample_alias, taxon_id, center_name, attributes={}, real=Fal
     return submit_today("SAMPLE", s_xml, center_name, release_asap=True, real=real)
 
 def register_experiment(exp_alias, study_accession, sample_accession, instrument, library_d, center_name, attributes={}, real=False):
-    e_attributes = "\n".join(["<EXPERIMENT_ATTRIBUTE><TAG>%s</TAG><VALUE>%s</VALUE></EXPERIMENT_ATTRIBUTE>" % (k, v) for k,v in attributes.items() if v is not None])
+    e_attributes = "\n".join(["<EXPERIMENT_ATTRIBUTE><TAG>%s</TAG><VALUE>%s</VALUE></EXPERIMENT_ATTRIBUTE>" % (k, v) for k,v in attributes.items() if v is not None and len(v) > 0])
 
     platform, model = _convert_platform(instrument)
     if platform:
