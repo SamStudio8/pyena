@@ -275,7 +275,7 @@ def cli():
     parser.add_argument("--sample-attr", action='append', nargs=2, metavar=('tag', 'value'))
     parser.add_argument("--sample-name", required=True)
     parser.add_argument("--sample-center-name", required=True)
-    parser.add_argument("--sample-taxon", required=False, default="2697049")
+    parser.add_argument("--sample-taxon", required=True)
 
     parser.add_argument("--experiment-attr", action='append', nargs=2, metavar=('tag', 'value'))
 
