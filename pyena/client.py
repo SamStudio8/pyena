@@ -209,6 +209,9 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
     else:
         layout_stanza.append("<SINGLE />")
 
+    e_protocol = ""
+    if library_d["protocol"]:
+        e_protocol = "<LIBRARY_CONSTRUCTION_PROTOCOL>%s</LIBRARY_CONSTRUCTION_PROTOCOL>" % library_d["protocol"]
 
     e_xml = '''
     <EXPERIMENT_SET>
@@ -224,8 +227,8 @@ def register_experiment(exp_alias, study_accession, sample_accession, instrument
                <LIBRARY_SOURCE>''' + library_d["source"] + '''</LIBRARY_SOURCE>
                <LIBRARY_SELECTION>''' + library_d["selection"] + '''</LIBRARY_SELECTION>
                <LIBRARY_LAYOUT>''' + "".join(layout_stanza) + '''</LIBRARY_LAYOUT>
+           ''' + e_protocol + '''
            </LIBRARY_DESCRIPTOR>
-           <LIBRARY_CONSTRUCTION_PROTOCOL>''' + library_d["protocol"] + '''</LIBRARY_CONSTRUCTION_PROTOCOL>
        </DESIGN>
        <PLATFORM>''' + platform_stanza + '''
        </PLATFORM>
