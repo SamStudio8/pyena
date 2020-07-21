@@ -135,6 +135,9 @@ def handle_response(status_code, content, accession=False):
                     response_code = 1
                     sys.stderr.write("[SKIP] File %s already uploaded. Cannot release again. Moving on...\n" % response_accession)
                     break
+                elif "does not exist in the upload area" in error.text:
+                    response_code = -3
+                    break
             if not response_accession:
                 sys.stderr.write("\n".join([
                     '*' * 80,
@@ -332,4 +335,6 @@ def cli():
         run_accession
     ]]) + '\n')
     if not success:
+        if run_stat < 0:
+            sys.exit(abs(run_stat))
         sys.exit(2)
