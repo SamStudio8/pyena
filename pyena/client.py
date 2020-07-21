@@ -138,7 +138,7 @@ def handle_response(status_code, content, accession=False):
                 elif "does not exist in the upload area" in error.text:
                     response_code = -3
                     break
-            if not response_accession:
+            if not response_accession and response_code == -1:
                 sys.stderr.write("\n".join([
                     '*' * 80,
                     "ENA responded with HTTP 200, but there were ERROR messages in the response.",
