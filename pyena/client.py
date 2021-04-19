@@ -53,7 +53,13 @@ def _convert_platform(instrument_name):
             "MinION": "MinION",
             "GridION": "GridION",
             "PromethION": "PromethION",
-        }
+        },
+        "ION_TORRENT": {
+            "Ion Torrent PGM": "Ion Torrent PGM",
+            "Ion Torrent Proton": "Ion Torrent Proton",
+            "Ion Torrent S5": "Ion Torrent S5",
+            "Ion Torrent S5 XL": "Ion Torrent S5 XL",
+        },
     }
 
     instrument_name = instrument_name.replace('_', ' ').lower()
